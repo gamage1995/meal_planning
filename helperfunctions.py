@@ -363,7 +363,3 @@ def getWeeklyAverageExerciseTimeAndHeartRate():
 
     except:
         print("Unexpected error:", sys.exc_info()[0])
-
-
-if __name__ == '__main__':
-    getWeeklyAverageExerciseTimeAndHeartRate()
