@@ -2,7 +2,10 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import requests
+import sys
 
+nodeServerUrl = "http://ec2-15-207-240-66.ap-south-1.compute.amazonaws.com/api/safety/getAllRecords"
 
 # define a function to take in recipe title and return the top recommended recipes
 def recommender(title, indices, df, cosine_sim, top_n):
@@ -334,4 +337,33 @@ def optimizer_dinner(rec_recipes, df, protein_lower, calorie, time='off'):
 
     return
 
+
+def getWeeklyAverageExerciseTimeAndHeartRate():
+    try:
+        response = requests.get(nodeServerUrl).json()
+        df = pd.DataFrame(response.get('payload'))
+        df.drop(columns=["_id", "__v", "gender","exerciseType"], axis=1, inplace=True)
+        df = df[df.heartRate != 0]
+        sessionIDs = df.sessionId.unique()
+        groupedSessions = df.groupby(df.sessionId)
+        sessionIDs.sort()
+        weeklySessions = 3
+        exerciseDuration = 0
+        avgHR = 0
+        for i in range(weeklySessions):
+            session = groupedSessions.get_group(sessionIDs[i])
+            avgHR += session['heartRate'].sum() / session.shape[0]
+            exerciseDuration += session.shape[0]
     
+        avgHR = avgHR / weeklySessions
+        # convert seconds to hrs
+        exerciseDuration = exerciseDuration / (60 * 60)
+        print(avgHR, exerciseDuration)
+        return avgHR, exerciseDuration
+
+    except:
+        print("Unexpected error:", sys.exc_info()[0])
+
+
+if __name__ == '__main__':
+    getWeeklyAverageExerciseTimeAndHeartRate()
